@@ -10,6 +10,8 @@
 #include <avr/io.h>
 
 #include "neopixel.h"
+#include "usart0.h"
+
 #include <avr/pgmspace.h>
 
 /*! The setting for the CLKCTRL.MCLKCTRLB register */
@@ -139,13 +141,20 @@ int main(void)
 	CLKCTRL.MCLKCTRLB = _MAIN_CLOCK;
 
 	neopixel_init();
+    USART0_Initialize();
     
     clear_message_buffer(message_length, message_buffer);
     render_next_char(message, message_length, chr_idx, 
             DEFAULT_RED, DEFAULT_GREEN, DEFAULT_BLUE, message_buffer);
 
 	while(true) {
-        
+        bool new_data = false;
+        while(USART0_IsRxReady()){
+            uint8_t data = USART0_Read();
+            if( data == 0xFE ){
+                new_data = true;
+            }
+        }
         roll_text();
         column++;
         delay_ms(100);

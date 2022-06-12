@@ -7,6 +7,7 @@
       <itemPath>attiny1614_sr595.h</itemPath>
       <itemPath>neopixel_anim.h</itemPath>
       <itemPath>neopixel.h</itemPath>
+      <itemPath>usart0.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -19,6 +20,7 @@
       <itemPath>main.c</itemPath>
       <itemPath>neopixel.c</itemPath>
       <itemPath>neopixel_anim.c</itemPath>
+      <itemPath>usart0.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
