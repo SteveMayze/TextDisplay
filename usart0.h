@@ -19,11 +19,11 @@ extern "C" {
 
 
 /* Normal Mode, Baud register value */
-#define USART0_BAUD_RATE(BAUD_RATE) (((float)10000000 * 64 / (16 * (float)BAUD_RATE)) + 0.5)
+#define USART0_BAUD_RATE(BAUD_RATE) (((float)20000000 * 64 / (16 * (float)BAUD_RATE)) + 0.5)
 
 /* USART0 Ringbuffer */
 
-#define USART0_RX_BUFFER_SIZE 8
+#define USART0_RX_BUFFER_SIZE 16
 #define USART0_TX_BUFFER_SIZE 8
 #define USART0_RX_BUFFER_MASK (USART0_RX_BUFFER_SIZE - 1)
 #define USART0_TX_BUFFER_MASK (USART0_TX_BUFFER_SIZE - 1)

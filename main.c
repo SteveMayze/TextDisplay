@@ -8,9 +8,12 @@
 #include "stdlib.h"
 #include "time.h"
 #include <avr/io.h>
+#include "avr/interrupt.h"
 
 #include "neopixel.h"
 #include "usart0.h"
+#include "stdio.h"
+#include "string.h"
 
 #include <avr/pgmspace.h>
 
@@ -30,7 +33,13 @@
 
 // Ensure this goes into the FLASH/Program space rather than RAM. However, this
 // will require a special work around to access this data.
-const  uint8_t font_table[52][5] PROGMEM = { 
+const  uint8_t font_table[128][5] PROGMEM = { 
+    // SP, !, ", #, $, %, &, ', (, ), *, +, ,, -, ., / 
+    {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},{0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},{0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},{0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},{0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},{0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},{0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},{0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},
+    // 0, 1, 2, 3, 4, 5, 6, 7 ,8 9, 0
+    {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},{0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},{0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},{0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},{0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},
+    // :, ;, <, =, >, ?, @
+     {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},
     // A, B, C, D, E, F
     {0x7E,0x90,0x90,0x90,0x7E}, {0xFE,0x92,0x92,0x92,0x6C}, {0x7C,0x82,0x82,0x82,0x44}, {0xFE,0x82,0x82,0x82,0x7C}, {0xFE,0x92,0x92,0x92,0x82}, {0xFE,0x90,0x90,0x90,0x80},
     // G, H, I, J, K, L
@@ -42,6 +51,9 @@ const  uint8_t font_table[52][5] PROGMEM = {
     // Y, Z
     {0xC0,0x30,0x0E,0x30,0xC0}, {0x86,0x8A,0x92,0xA2,0xC2},
     
+    //[, \, ], ^, _, `, 
+    {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},
+    
     // a, b, c, d, e, f
     {0x04,0x2A,0x2A,0x2A,0x1E},{0xFE,0x22,0x22,0x22,0x1C},{0x1C,0x22,0x22,0x22,0x22},{0x1C,0x22,0x22,0x22,0xFE},{0x1C,0x2A,0x2A,0x2A,0x18},{0x00,0x22,0xFE,0xA2,0x00},
     // g, h, i, j, k, l, 
@@ -52,35 +64,34 @@ const  uint8_t font_table[52][5] PROGMEM = {
     {0x12,0x2A,0x2A,0x2A,0x24},{0x00,0x40,0xFC,0x42,0x00},{0x3C,0x02,0x02,0x04,0x3E},{0x38,0x04,0x02,0x04,0x38},{0x38,0x06,0x1C,0x06,0x3C},{0x22,0x14,0x08,0x14,0x22},
     // y, z
     {0x38,0x05,0x05,0x05,0x3E},{0x22,0x26,0x2A,0x32,0x22},
+    // {, |, }, ~
+    {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00}, {0x00, 0x00, 0x00, 0x00, 0x00},
 
     };
 
-
+#define DEFAULT_MESSAGE "ZAM PCS Texteck "
 uint8_t display_buffer[MAX_BUFFERS][neopixel_buffer_size];
 
-char message[255] = "ZAM PCS TEXTECK ";
+char message[255] = DEFAULT_MESSAGE;
 uint8_t message_length = 16;
 uint8_t chr_idx = 0;
 uint8_t column = 0;
+uint8_t data = 0;
+uint8_t checksum = 0x00;
 
 pixel_type message_buffer[MAX_BUFFERS][5]; // The number of characters in the string x 5 for each char and x3 for each LED.
 
 
 
 
-uint8_t clear_message_buffer(uint8_t message_length, pixel_type message_buffer[][5]) {
-        
-    // For each character in the message 
-    for(uint8_t i=0; i<message_length; i++) {
-        for (uint8_t col=0; col < 5; col++){
-            for(uint8_t row = 0; row < MAX_BUFFERS; row++){
-                message_buffer[row][col].red = 0x00; 
-                message_buffer[row][col].green = 0x00; 
-                message_buffer[row][col].blue = 0x00; 
-            }
+uint8_t clear_message_buffer(pixel_type message_buffer[][5]) {
+    for (uint8_t col=0; col < 5; col++){
+        for(uint8_t row = 0; row < MAX_BUFFERS; row++){
+            message_buffer[row][col].red = 0x00; 
+            message_buffer[row][col].green = 0x00; 
+            message_buffer[row][col].blue = 0x00; 
         }
     }
-    
     return 0;
 }
 
@@ -88,10 +99,10 @@ uint8_t render_next_char(char *message, uint8_t message_length, uint8_t char_idx
         uint8_t red, uint8_t green, uint8_t blue,
         pixel_type message_buffer[][5]){
     if (message[char_idx] == ' ') {
-        clear_message_buffer(message_length, message_buffer);
+        clear_message_buffer(message_buffer);
         return 0;  
     } 
-    uint8_t font_idx = (message[char_idx] & 0x7F) - 'A';
+    uint8_t font_idx = (message[char_idx] & 0x7F) - ' ';
     // The font information is stored in the programs space and needs
     // this workaround to access it.
     uint8_t font_char[5];
@@ -117,24 +128,29 @@ void roll_text(){
             display_buffer[channel][NEO_RED] = 0x00;
             display_buffer[channel][NEO_GREEN] = 0x00;
             display_buffer[channel][NEO_BLUE] = 0x00;
+            neopixel_setchannel(1<<channel);
+            neopixel_show(display_buffer[channel]);
         }
         column = 0;
         chr_idx++;
         if ( chr_idx > message_length -1){
             chr_idx = 0;
         }
-        clear_message_buffer(message_length, message_buffer);
+        clear_message_buffer(message_buffer);
         render_next_char(message, message_length, chr_idx, 
                 DEFAULT_RED, DEFAULT_GREEN, DEFAULT_BLUE, message_buffer);
+    } else {
+        for( uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
+            neopixel_shift(display_buffer[channel], true, false);
+            display_buffer[channel][NEO_RED] = message_buffer[channel][column].red;
+            display_buffer[channel][NEO_GREEN] = message_buffer[channel][column].green;
+            display_buffer[channel][NEO_BLUE] = message_buffer[channel][column].blue;
+            neopixel_setchannel(1<<channel);
+            neopixel_show(display_buffer[channel]);
+        }
+        column++;
     }
-    for( uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
-        neopixel_shift(display_buffer[channel], true, false);
-        display_buffer[channel][NEO_RED] = message_buffer[channel][column].red;
-        display_buffer[channel][NEO_GREEN] = message_buffer[channel][column].green;
-        display_buffer[channel][NEO_BLUE] = message_buffer[channel][column].blue;
-        neopixel_setchannel(1<<channel);
-        neopixel_show(display_buffer[channel]);
-    }
+    
 }
 
 /************************************************************************/
@@ -153,22 +169,58 @@ int main(void)
 	CLKCTRL.MCLKCTRLB = _MAIN_CLOCK;
 
 	neopixel_init();
+    
+    PORTB.DIRSET |= (1 << 2); // PB2 TxD, PB3 RxD
+    sei(); 
     USART0_Initialize();
     
-    clear_message_buffer(message_length, message_buffer);
+    clear_message_buffer(message_buffer);
     render_next_char(message, message_length, chr_idx, 
             DEFAULT_RED, DEFAULT_GREEN, DEFAULT_BLUE, message_buffer);
 
 	while(true) {
-        bool new_data = false;
-        while(USART0_IsRxReady()){
-            uint8_t data = USART0_Read();
-            if( data == 0xFE ){
-                new_data = true;
+        if(USART0_IsRxReady()) {
+            while(USART0_IsRxReady()){
+                data = USART0_Read();
+                if( data == 0xFE ){
+                   uint8_t data_length = USART0_Read();
+                   for (uint8_t i = 0; i < data_length; i++){
+                       message[i] = USART0_Read();
+                       checksum += message[i];
+                   }
+                   message[data_length] = 0x00;
+                   message_length = data_length;
+                   checksum &= 0xFF;
+                   checksum = 0xFF - checksum;
+                   data = USART0_Read();
+                   if( checksum == data ){
+                       USART0_Write(0xFE);
+                       USART0_Write(0x01);
+                       USART0_Write(0x01);
+                   } else {
+                       sprintf(message, "BAD CHK received: %02x, calc: %02x", data, checksum);
+                       message_length = strlen(message);
+                       column = 0;
+                       chr_idx = 0;
+                       break;
+                   }
+                } else {
+                       sprintf(message, "BAD MSG");
+                       message_length = strlen(message);
+                       column = 0;
+                       chr_idx = 0;
+                       break;
+                   }
+            }
+            clear_message_buffer(message_buffer);
+            render_next_char(message, message_length, chr_idx, 
+                    DEFAULT_RED, DEFAULT_GREEN, DEFAULT_BLUE, message_buffer);
+            for(uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
+                neopixel_fill(display_buffer[channel],0x00,0x00,0x00);
+                neopixel_show(display_buffer[channel]);
             }
         }
         roll_text();
-        column++;
         delay_ms(100);
         
 	}
