@@ -135,6 +135,8 @@ uint8_t USART0_Read(void);
  */
 void USART0_Write(const uint8_t data);
 
+void USART0_flush();
+
 /**
  * \brief Set call back function for USART0
  *
@@ -154,6 +156,7 @@ void USART0_SetISRCb(usart_callback cb, usart0_cb_t type);
 void USART0_SetRXISRCb(usart_callback cb);
 
 void USART0_SetTXISRCb(usart_callback cb);
+
 
 #ifdef	__cplusplus
 }
