@@ -240,3 +240,8 @@ uint8_t USART0_GetData()
 {
     return USART0.RXDATAL;
 }
+
+void USART0_flush(){
+    while(USART0_IsRxReady())
+        USART0_Read();
+}
