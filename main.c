@@ -5,6 +5,8 @@
  * Author : Steven
  */ 
 
+#define NEO_DESITY_COMPACT
+
 #include "time.h"
 #include "avr/interrupt.h"
 #include "neopixel.h"

@@ -11,9 +11,14 @@
 #include <avr/io.h>
 #include <stdbool.h>
 #include <util/delay.h>
+#include "avr/interrupt.h"
 
 #include "neopixel.h"
 #include "attiny1614_sr595.h"
+
+#ifdef NEO_DESITY_COMPACT
+#include "neopixel_colour.h"
+#endif
 
 /*! The buffer that contains all pixel and colour data */
 // uint8_t buffer[neopixel_buffer_size];
@@ -50,9 +55,13 @@ void neopixel_init(){
 void neopixel_setPixel(uint8_t strip[], uint8_t pixel, uint8_t red, uint8_t green, uint8_t blue)
 {
     volatile uint8_t location = pixel * 3;
+#ifndef NEO_DESITY_COMPACT
 	strip[ location + NEO_RED ] = red;
 	strip[ location + NEO_GREEN ] = green;
 	strip[ location + NEO_BLUE ] = blue;
+#else
+    strip[ location ] = red; // only one colour is required here.
+#endif
 }
 
 
@@ -60,7 +69,8 @@ void neopixel_setPixel(uint8_t strip[], uint8_t pixel, uint8_t red, uint8_t gree
  * \brief	Increases the pixel hue to a maximum of 0xFF based on the values contained in the pixel struct.
  */
 void neopixel_incPixelHue(uint8_t strip[], pixel_type pixel){
-	volatile uint8_t location = pixel.pix * 3;
+#ifndef NEO_DESITY_COMPACT
+	volatile uint8_t location = pixel.pix * NEO_COLOUR_DENSITY;
 	// Don't increase if either or any have reached their ceiling.
 	if ( strip[ location + NEO_RED ] <= (0xFF - pixel.red) && 
 	     strip[ location + NEO_GREEN ] <= (0xFF - pixel.green) && 
@@ -69,11 +79,13 @@ void neopixel_incPixelHue(uint8_t strip[], pixel_type pixel){
 		strip[ location + NEO_GREEN ] <= (0xFF - pixel.green)? strip[ location + NEO_GREEN ] += pixel.green: strip[ location + NEO_GREEN ];
 		strip[ location + NEO_BLUE ] <= (0xFF - pixel.blue)? strip[ location + NEO_BLUE ] += pixel.blue: strip[ location + NEO_BLUE ];
 	}
+#endif
 }
 
 bool neopixel_incPixelHue_with_limit(uint8_t strip[], pixel_type pixel){
 	bool limit_reached = false;
-	volatile uint16_t location = pixel.pix * 3;
+#ifndef NEO_DESITY_COMPACT
+	volatile uint16_t location = pixel.pix * NEO_COLOUR_DENSITY;
 	// Don't increase if either or any have reached their ceiling.
 	if ( strip[ location + NEO_RED ] <= (NEO_HUE_MAX_LIMIT - pixel.red) &&
 	strip[ location + NEO_GREEN ] <= (NEO_HUE_MAX_LIMIT - pixel.green) &&
@@ -84,6 +96,7 @@ bool neopixel_incPixelHue_with_limit(uint8_t strip[], pixel_type pixel){
 		} else {
 		limit_reached = true;
 	}
+#endif
 	return limit_reached;
 }
 
@@ -92,7 +105,8 @@ bool neopixel_incPixelHue_with_limit(uint8_t strip[], pixel_type pixel){
  * \brief	Decreases the pixel hue to zero based on the values contained in the pixel struct.
  */
 void neopixel_decrPixelHue(uint8_t strip[], pixel_type pixel){
-	volatile uint8_t location = pixel.pix * 3;
+#ifndef NEO_DESITY_COMPACT
+	volatile uint8_t location = pixel.pix * NEO_COLOUR_DENSITY;
 	if( strip[ location + NEO_RED ] > 0 ) {
 		strip[ location + NEO_RED ] >= (0x00 + pixel.red)? strip[ location + NEO_RED ] -= pixel.red: strip[ location + NEO_RED ];
 	}
@@ -104,6 +118,7 @@ void neopixel_decrPixelHue(uint8_t strip[], pixel_type pixel){
 	if( strip[ location + NEO_BLUE ] > 0 ) {
 		strip[ location + NEO_BLUE ] >= (0x00 - pixel.blue)? strip[ location + NEO_BLUE ] -= pixel.blue: strip[ location + NEO_BLUE ];
 	}
+#endif
 }
 
 /*!
@@ -111,7 +126,8 @@ void neopixel_decrPixelHue(uint8_t strip[], pixel_type pixel){
  */
 bool neopixel_decrPixelHue_with_limit(uint8_t strip[], pixel_type pixel) {
 	bool limit_reached = false;
-	volatile uint16_t location = pixel.pix * 3;
+#ifndef NEO_DESITY_COMPACT
+	volatile uint16_t location = pixel.pix * NEO_COLOUR_DENSITY;
 	if( strip[ location + NEO_RED ] > NEO_HUE_MIN_LIMIT ) {
 		strip[ location + NEO_RED ] = ( strip[ location + NEO_RED ] > NEO_HUE_MIN_LIMIT) ? (strip[ location + NEO_RED ] -= pixel.red): 0x00;
 	} 
@@ -128,7 +144,7 @@ bool neopixel_decrPixelHue_with_limit(uint8_t strip[], pixel_type pixel) {
 	if ( strip[ location + NEO_RED ] <= NEO_HUE_MIN_LIMIT && strip[ location + NEO_GREEN ] <=  NEO_HUE_MIN_LIMIT && strip[ location + NEO_BLUE ] <= NEO_HUE_MIN_LIMIT){
 		limit_reached = true;
 	}
-
+#endif
 	return limit_reached;
 }
 
@@ -145,7 +161,7 @@ void neopixel_fill(uint8_t strip[], uint8_t red, uint8_t green, uint8_t blue){
 /*!
  * \brief	Shifts the pixels one pixel in the indicated direction
  */
-void neopixel_shift(uint8_t strip[], bool direction, bool roll){
+void neopixel_shift_dense(uint8_t strip[], bool direction, bool roll){
 
 	uint8_t tmp_red, tmp_green, tmp_blue;
 
@@ -155,8 +171,8 @@ void neopixel_shift(uint8_t strip[], bool direction, bool roll){
 		tmp_blue =  strip[ LAST_PIXEL + NEO_BLUE];
 
    	    for (int i = NEOPIXELS_SIZE-1; i > 0; i--){
-	   	    uint8_t  baseLocation= i * 3;
-	   	    uint8_t newBaseLocation = ( i - 1) * 3;
+	   	    uint8_t  baseLocation= i * NEO_COLOUR_DENSITY;
+	   	    uint8_t newBaseLocation = ( i - 1) * NEO_COLOUR_DENSITY;
 
 	   	    strip[ baseLocation + NEO_RED ] = strip[ newBaseLocation + NEO_RED ];
 	   	    strip[ baseLocation + NEO_GREEN ] = strip[newBaseLocation + NEO_GREEN];
@@ -173,8 +189,8 @@ void neopixel_shift(uint8_t strip[], bool direction, bool roll){
 		tmp_green =  strip[  NEO_GREEN ];
 		tmp_blue =  strip[  NEO_BLUE ];
 		for (int i = 0; i < ( NEOPIXELS_SIZE-1 ); i++){
-			uint8_t baseLocation = i * 3;
-			uint8_t newBaseLocation = (i + 1) * 3;
+			uint8_t baseLocation = i * NEO_COLOUR_DENSITY;
+			uint8_t newBaseLocation = (i + 1) * NEO_COLOUR_DENSITY;
 
 			strip[ baseLocation + NEO_RED ] = strip[ newBaseLocation + NEO_RED ];
 			strip[ baseLocation + NEO_GREEN ] = strip[newBaseLocation + NEO_GREEN];
@@ -188,9 +204,81 @@ void neopixel_shift(uint8_t strip[], bool direction, bool roll){
 	}
 }
 
+void neopixel_shift_compact(uint8_t strip[], bool direction, bool roll){
+
+	uint8_t tmp_pix;
+
+   if( direction ) {
+		tmp_pix = strip[ LAST_PIXEL];
+
+   	    for (int i = NEOPIXELS_SIZE-1; i > 0; i--){
+	   	    uint8_t  baseLocation= i;
+	   	    uint8_t newBaseLocation = ( i - 1);
+
+	   	    strip[ baseLocation  ] = strip[ newBaseLocation  ];
+   	    }
+        if ( roll ){
+            strip[0] = tmp_pix;
+        }
+	} else {
+
+		tmp_pix = strip[0];
+		for (int i = 0; i < ( NEOPIXELS_SIZE-1 ); i++){
+			uint8_t baseLocation = i;
+			uint8_t newBaseLocation = (i + 1);
+
+			strip[ baseLocation ] = strip[ newBaseLocation ];
+		}
+        if ( roll ) {
+            strip[LAST_PIXEL] = tmp_pix;
+        }
+	}
+}
+
+
+void neopixel_shift(uint8_t strip[], bool direction, bool roll) {
+#ifndef NEO_DENSITY_COMPACT
+    neopixel_shift_dense(strip, direction, roll);
+#else
+    neopixel_shift_compact(strip, direction, roll);
+#endif
+}
+
 /*!
  * \brief Pushes the buffer out to the pixel strip.
  */
+#ifndef NEO_DENSITY_COMPACT
+
+void neopixel_show(uint8_t strip[])
+{
+    uint8_t pdata;
+    for (uint8_t p = 0; p < neopixel_buffer_size; p++) {
+        // Grab the colour definition from the colour_chart based 
+        // on the colour specification for the pixel.
+        for(uint8_t i = 0; i<3; i++){
+            pdata =  pgm_read_byte( &(colour_chart[strip[p]][i]));    
+            SR595_PORT |= (1 << SR595_PA4 );
+            for( uint8_t i=0; i<8; i++){
+                if( pdata & 0b10000000 ) { // HIGH = 0.6, 0.6 uS
+                    SR595_PORT |= (1 << SR595_PA4 );
+                    _delay_us(6);
+                    SR595_PORT &= (~(1 << SR595_PA4 ));
+                    _delay_us(6);
+                } else { // LOW = 0.3, 0.9 uS
+                    cli();
+                    SR595_PORT |= (1 << SR595_PA4 );
+                    _delay_us(3);
+                    SR595_PORT &= (~(1 << SR595_PA4 ));
+                    _delay_us(9);
+                    sei(); 
+                }
+                pdata = pdata << 1;
+            }
+        }
+    }
+}
+
+#else
 void neopixel_show(uint8_t strip[])
 {
 	volatile uint16_t  i = neopixel_buffer_size; // Loop counter
@@ -270,6 +358,7 @@ void neopixel_show(uint8_t strip[])
       [lo]     "r" (lo));
 
 }
+#endif
 
  void neopixel_setchannel( uint8_t channel ) {
 	sr595_shiftout( channel );

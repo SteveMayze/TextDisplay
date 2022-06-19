@@ -18,7 +18,7 @@
 #define DEFAULT_MESSAGE "ZAM PCS Texteck "
 uint8_t display_buffer[MAX_BUFFERS][neopixel_buffer_size];
 
-char message[128] = DEFAULT_MESSAGE;
+char message[MAX_MESSAGE_SIZE] = DEFAULT_MESSAGE;
 uint8_t message_length = 16;
 uint8_t chr_idx = 0;
 uint8_t column = 0;

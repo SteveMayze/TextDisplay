@@ -40,11 +40,24 @@ typedef struct {
 #define NEOPIXELS_SIZE 60
 
 /*! The NeoPixel buffer size */
-#define neopixel_buffer_size NEOPIXELS_SIZE * 3
+#define NEO_DESITY_COMPACT
+#ifdef NEO_DESITY_COMPACT
+// Compact will have one byte to represent a full colour density.
+// These  become an index to a colour array that defines a fixed set
+// of colours.
+#define NEO_COLOUR_DENSITY 1
+#else
+// The colour density implies how many bytes are to be used
+// in the pixel ram. 3 indicates that each of the RGB will take
+// up a byte each.
+#define NEO_COLOUR_DENSITY 3
+#endif 
+
+#define neopixel_buffer_size NEOPIXELS_SIZE * NEO_COLOUR_DENSITY
 /*! The location of the first pixel */
 #define FIRST_PIXEL 0
 /*! The location of the last pixel */
-#define LAST_PIXEL ((NEOPIXELS_SIZE-1) *3)
+#define LAST_PIXEL ((NEOPIXELS_SIZE-1) * NEO_COLOUR_DENSITY)
 // #define LAST_PIXEL ((NEOPIXELS_SIZE *3) -1 )
 
 /*! The relative location of the RED colour data */

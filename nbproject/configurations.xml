@@ -10,6 +10,7 @@
       <itemPath>usart0.h</itemPath>
       <itemPath>textdisplay.h</itemPath>
       <itemPath>textdisplay_font.h</itemPath>
+      <itemPath>neopixel_colour.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"

@@ -12,6 +12,8 @@
 extern "C" {
 #endif
     
+#define MAX_MESSAGE_SIZE 200
+    
 void textdisplay_initialise();
 void textdisplay_ctrl();
 void textdisplay_roll_text();
