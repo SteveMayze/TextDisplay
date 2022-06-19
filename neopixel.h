@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include "attiny1614_sr595.h"
 
+#define NEO_DENSITY_COMPACT
+
 typedef struct {
 	uint8_t pix;
 	uint8_t red;
@@ -40,11 +42,16 @@ typedef struct {
 #define NEOPIXELS_SIZE 60
 
 /*! The NeoPixel buffer size */
-#define NEO_DESITY_COMPACT
-#ifdef NEO_DESITY_COMPACT
+#ifdef NEO_DENSITY_COMPACT
 // Compact will have one byte to represent a full colour density.
 // These  become an index to a colour array that defines a fixed set
 // of colours.
+
+#define NEO_COLOUR_BLACK 0 
+#define NEO_COLOUR_RED 1
+#define NEO_COLOUR_GREEN 2
+#define NEO_COLOUR_BLUE 3
+
 #define NEO_COLOUR_DENSITY 1
 #else
 // The colour density implies how many bytes are to be used
