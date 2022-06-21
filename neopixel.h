@@ -123,6 +123,8 @@ void neopixel_shift(uint8_t strip[], bool direction, bool roll );
  */
 void neopixel_fill(uint8_t strip[], uint8_t red, uint8_t green, uint8_t blue);
 
+uint8_t get_speed();
+
 /*!
  * \brief Pushes the buffer out to the pixel strip.
  */

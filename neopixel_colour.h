@@ -16,7 +16,8 @@ extern "C" {
 
 
     
-const  uint8_t colour_chart[4][3] PROGMEM = { 
+//const  uint8_t colour_chart[4][3] PROGMEM = { 
+const  uint8_t colour_chart[4][3] = { 
    // G, R, B
     {0x00, 0x00, 0x00}, // 0 Black
     {0x00, 0x7F, 0x00}, // 1 Red

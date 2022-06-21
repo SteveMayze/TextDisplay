@@ -44,6 +44,7 @@ void delay_ms(int ms){
 
 void neopixel_init(){
 	PORTA.DIR |= (1 << NEOPIXEL_NEOPIN);
+    SR595_PORT |= (1 << SR595_PA4 );
 	sr595_init();
 
 }
@@ -54,7 +55,7 @@ void neopixel_init(){
  */
 void neopixel_setPixel(uint8_t strip[], uint8_t pixel, uint8_t red, uint8_t green, uint8_t blue)
 {
-    volatile uint8_t location = pixel * 3;
+    volatile uint8_t location = pixel * NEO_COLOUR_DENSITY;
 #ifndef NEO_DENSITY_COMPACT
 	strip[ location + NEO_RED ] = red;
 	strip[ location + NEO_GREEN ] = green;
@@ -258,8 +259,9 @@ void neopixel_show(uint8_t strip[])
         uint8_t colour_idx = strip[p];
         cli();
         for(uint8_t i = 0; i<3; i++){
-            pdata =  pgm_read_byte( &(colour_chart[colour_idx][i]));  
-            SR595_PORT |= (1 << SR595_PA4 );
+            // pdata =  pgm_read_byte( &(colour_chart[colour_idx][i]));  
+            pdata =  colour_chart[colour_idx][i];  
+            //SR595_PORT |= (1 << SR595_PA4 );
             for( uint8_t i=0; i<8; i++){
                 if( pdata & 0b10000000 ) { // HIGH = 0.6, 0.6 uS
                     SR595_PORT &= (~(1 << SR595_PA4 ));
@@ -278,6 +280,7 @@ void neopixel_show(uint8_t strip[])
                 pdata = pdata << 1;
             }
         }
+        SR595_PORT |= (1 << SR595_PA4 );
         sei();
     }
 }
