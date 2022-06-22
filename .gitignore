@@ -21,4 +21,4 @@ nbproject/Makefile-*
 disassembly/
 *.map
 .DS_Store
-
+.generated_files
