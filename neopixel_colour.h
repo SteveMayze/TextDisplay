@@ -16,13 +16,17 @@ extern "C" {
 
 
     
-//const  uint8_t colour_chart[4][3] PROGMEM = { 
-const  uint8_t colour_chart[4][3] = { 
-   // G, R, B
+const  uint8_t colour_chart[8][3] PROGMEM = { 
+// const  uint8_t colour_chart[4][3] = { 
+   // G,   R,    B
     {0x00, 0x00, 0x00}, // 0 Black
     {0x00, 0x7F, 0x00}, // 1 Red
-    {0x7F, 0x00, 0x00}, // 2 Green
-    {0x00, 0x00, 0x7F}, // 3 Blue
+    {0x52, 0x7F, 0x00}, // 2 orange
+    {0x7F, 0x7F, 0x00}, // 3 yellow
+    {0x7F, 0x00, 0x00}, // 4 Green
+    {0x00, 0x00, 0x7F}, // 5 Blue
+    {0x00, 0x25, 0x41}, // 6 indigo
+    {0x00, 0x40, 0x40}, // 7 Violet
   
 };
 
