@@ -31,7 +31,7 @@ uint8_t data = 0;
 uint8_t checksum = 0x00;
 
 
-uint8_t pix_colour = DEFAULT_RED;
+uint8_t pix_colour = NEO_COLOUR_WHITE;
 
 #define FRAME_DELIMITER 0xFE
 #define ACTION_MESSAGE 0x01
@@ -219,6 +219,7 @@ void textdisplay_ctrl(){
                 message_length = strlen(DEFAULT_MESSAGE);
                 chr_idx = 0;
                 column = 0;
+                pix_colour = NEO_COLOUR_WHITE;
                 clear_message_buffer(message_buffer);
                 render_next_char(message, message_length, chr_idx, pix_colour, message_buffer);
                 for(uint8_t channel = 0; channel < MAX_BUFFERS; channel++){

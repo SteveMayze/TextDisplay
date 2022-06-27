@@ -47,10 +47,15 @@ typedef struct {
 // These  become an index to a colour array that defines a fixed set
 // of colours.
 
-#define NEO_COLOUR_BLACK 0 
-#define NEO_COLOUR_RED 1
-#define NEO_COLOUR_GREEN 2
-#define NEO_COLOUR_BLUE 3
+#define NEO_COLOUR_BLACK  0
+#define NEO_COLOUR_RED    1
+#define NEO_COLOUR_ORANGE 2
+#define NEO_COLOUR_YELLO  3
+#define NEO_COLOUR_GREEN  4
+#define NEO_COLOUR_BLUE   5
+#define NEO_COLOUR_INDIGO 6
+#define NEO_COLOUR_VIOLET 7
+#define NEO_COLOUR_WHITE  8
 
 #define NEO_COLOUR_DENSITY 1
 #else

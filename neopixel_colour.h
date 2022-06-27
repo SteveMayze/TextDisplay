@@ -13,10 +13,8 @@ extern "C" {
 #endif
 
 #include <avr/pgmspace.h>
-
-
     
-const  uint8_t colour_chart[8][3] PROGMEM = { 
+const  uint8_t colour_chart[9][3] PROGMEM = { 
 // const  uint8_t colour_chart[4][3] = { 
    // G,   R,    B
     {0x00, 0x00, 0x00}, // 0 Black
@@ -27,6 +25,7 @@ const  uint8_t colour_chart[8][3] PROGMEM = {
     {0x00, 0x00, 0x7F}, // 5 Blue
     {0x00, 0x25, 0x41}, // 6 indigo
     {0x00, 0x40, 0x40}, // 7 Violet
+    {0x7F, 0x7F, 0x7F}, // 8 White    
   
 };
 
