@@ -29,9 +29,8 @@ volatile uint8_t chr_idx = 0;
 volatile uint8_t column = 0;
 uint8_t data = 0;
 uint8_t checksum = 0x00;
-
-
-uint8_t pix_colour = NEO_COLOUR_WHITE;
+uint8_t forground_colour = NEO_COLOUR_WHITE;
+uint8_t background_colour = NEO_COLOUR_BLACK;
 
 #define FRAME_DELIMITER 0xFE
 #define ACTION_MESSAGE 0x01
@@ -43,7 +42,13 @@ uint8_t pix_colour = NEO_COLOUR_WHITE;
 #define INVALID_ACTION 0x82
 #define BAD_CHKSUM 0x83
 
-uint8_t message_buffer[MAX_BUFFERS][5]; // The number of characters in the string x 5 for each char and x3 for each LED.
+// uint8_t char_buffer[MAX_BUFFERS][5]; // The number of characters in the string x 5 for each char and x3 for each LED.
+
+typedef struct _char_buffer{
+    uint8_t width;
+    uint8_t definition[MAX_BUFFERS][5];
+} Char_Buffer;
+Char_Buffer char_buffer;
 
 typedef struct _Data_Frame {
   // uint8_t data_length;
@@ -67,21 +72,24 @@ typedef union {
 
 
 
-uint8_t clear_message_buffer(uint8_t message_buffer[][5]) {
+uint8_t clear_char_buffer(Char_Buffer *char_buffer) {
     for (uint8_t col=0; col < 5; col++){
         for(uint8_t row = 0; row < MAX_BUFFERS; row++){
-            message_buffer[row][col] = NEO_COLOUR_BLACK; 
+            char_buffer->definition[row][col] = background_colour; 
         }
     }
+    char_buffer->width = 0;
     return 0;
 }
 
 
 uint8_t render_next_char(char message[], uint8_t message_length, uint8_t char_idx,
-        uint8_t colour, uint8_t message_buffer[][5]){
+        uint8_t colour, Char_Buffer *char_buffer){
+    
+    bool added = false;
     
     if (message[char_idx] == ' ') {
-        clear_message_buffer(message_buffer);
+        clear_char_buffer(char_buffer);
         return 0;  
     } 
     uint8_t font_idx = (message[char_idx] & 0x7F) - FONT_START_CHAR;
@@ -92,14 +100,16 @@ uint8_t render_next_char(char message[], uint8_t message_length, uint8_t char_id
         font_char[i] =  pgm_read_byte( &(font_table[font_idx][i]));        
     }
     for(uint8_t col = 0; col < 5; col++){
+        added = false;
         for(uint8_t row = 0; row < MAX_BUFFERS; row++){
-            message_buffer[row][col] = NEO_COLOUR_BLACK;
-            if( font_char[col]> 0 && font_char[col] & (1<<row)) {
-                message_buffer[row][col] = colour;
-            } else {
-                message_buffer[row][col] = NEO_COLOUR_BLACK;            
+            // char_buffer->definition[row][char_buffer->width] = background_colour;
+            if(  font_char[col] & (1<<row)) {
+                char_buffer->definition[row][char_buffer->width] = colour;
+                added = true;
             }
         }
+         if(  added )
+             char_buffer->width++;
     }
     return 0;
 }
@@ -120,9 +130,9 @@ void textdisplay_initialise(){
 
     chr_idx = 0;
     column = 0;
-    clear_message_buffer(message_buffer);
+    clear_char_buffer(&char_buffer);
     render_next_char(message, message_length, chr_idx, 
-            pix_colour, message_buffer);
+            forground_colour, &char_buffer);
     USART0_flush();
 
 }
@@ -130,10 +140,10 @@ void textdisplay_initialise(){
 
 void textdisplay_roll_text(){
     if (speed > 0 ){
-        if ( column < 5 ){ // 0, 1, 2, 3, 4
+        if ( column < char_buffer.width ){ // 0, 1, 2, 3, 4
             for( uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
                 neopixel_shift(display_buffer[channel], true, false);
-                display_buffer[channel][0] = message_buffer[channel][column];
+                display_buffer[channel][0] = char_buffer.definition[channel][column];
                 neopixel_setchannel( 1 << channel );
                 neopixel_show(display_buffer[channel]);
             }
@@ -143,11 +153,11 @@ void textdisplay_roll_text(){
             if ( chr_idx > message_length -1){
                 chr_idx = 0;
             }
-            clear_message_buffer(message_buffer);
-            render_next_char(message, message_length, chr_idx, pix_colour, message_buffer);
+            clear_char_buffer(&char_buffer);
+            render_next_char(message, message_length, chr_idx, forground_colour, &char_buffer);
             for( uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
                 neopixel_shift(display_buffer[channel], true, false);
-                display_buffer[channel][0] = NEO_COLOUR_BLACK;
+                display_buffer[channel][0] = background_colour;
                 neopixel_setchannel( 1<<channel );
                 neopixel_show(display_buffer[channel]);
             }
@@ -203,25 +213,25 @@ void textdisplay_ctrl(){
                column = 0;
                chr_idx = 0;
                 // TODO Clear the display.
-                clear_message_buffer(message_buffer);
+                clear_char_buffer(&char_buffer);
                 render_next_char(message, message_length, chr_idx, 
-                        pix_colour, message_buffer);
+                        forground_colour, &char_buffer);
                 for(uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
-                    neopixel_fill(display_buffer[channel], NEO_COLOUR_BLACK,0x00,0x00);
+                    neopixel_fill(display_buffer[channel], background_colour,0x00,0x00);
                     neopixel_setchannel( 1<<channel );
                     neopixel_show(display_buffer[channel]);
                 }
            } else if ( message_frame.item.data_frame.action == ACTION_COLOUR ) { // Colour
-               pix_colour = message_frame.item.data_frame.data[0];
+               forground_colour = message_frame.item.data_frame.data[0];
            } else if (message_frame.item.data_frame.action == ACTION_RESET ){
                 // Reset
                 strcpy(message, DEFAULT_MESSAGE);
                 message_length = strlen(DEFAULT_MESSAGE);
                 chr_idx = 0;
                 column = 0;
-                pix_colour = NEO_COLOUR_WHITE;
-                clear_message_buffer(message_buffer);
-                render_next_char(message, message_length, chr_idx, pix_colour, message_buffer);
+                forground_colour = NEO_COLOUR_WHITE;
+                clear_char_buffer(&char_buffer);
+                render_next_char(message, message_length, chr_idx, forground_colour, &char_buffer);
                 for(uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
                     neopixel_fill(display_buffer[channel],0x00,0x00,0x00);
 //                    neopixel_setchannel(1<<channel);
@@ -239,9 +249,9 @@ void textdisplay_ctrl(){
                message_frame.item.data_frame.action = INVALID_ACTION;
                message_frame.item.data_frame.data[0] = message_frame.item.data_frame.action;
                send_response(&message_frame);
-               clear_message_buffer(message_buffer);
+               clear_char_buffer(&char_buffer);
                render_next_char(message, message_length, chr_idx, 
-                        pix_colour, message_buffer);
+                        forground_colour, &char_buffer);
                 for(uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
                     neopixel_fill(display_buffer[channel],0x00,0x00,0x00);
                     neopixel_setchannel(1<<channel);
@@ -259,9 +269,9 @@ void textdisplay_ctrl(){
             message_frame.item.data_frame.data[0] = message_frame.item.data_frame.action;
             send_response(&message_frame);
             USART0_flush();
-            clear_message_buffer(message_buffer);
+            clear_char_buffer(&char_buffer);
              render_next_char(message, message_length, chr_idx, 
-                     pix_colour, message_buffer);
+                     forground_colour, &char_buffer);
              for(uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
                 neopixel_fill(display_buffer[channel],0x00,0x00,0x00);
                 neopixel_setchannel(1<<channel);
