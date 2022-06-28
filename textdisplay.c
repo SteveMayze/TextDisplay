@@ -223,6 +223,8 @@ void textdisplay_ctrl(){
                 }
            } else if ( message_frame.item.data_frame.action == ACTION_COLOUR ) { // Colour
                forground_colour = message_frame.item.data_frame.data[0];
+               if( message_frame.item.data_length > 1)
+                  background_colour = message_frame.item.data_frame.data[1];
            } else if (message_frame.item.data_frame.action == ACTION_RESET ){
                 // Reset
                 strcpy(message, DEFAULT_MESSAGE);
@@ -230,12 +232,11 @@ void textdisplay_ctrl(){
                 chr_idx = 0;
                 column = 0;
                 forground_colour = NEO_COLOUR_WHITE;
+                background_colour = NEO_COLOUR_BLACK;
                 clear_char_buffer(&char_buffer);
                 render_next_char(message, message_length, chr_idx, forground_colour, &char_buffer);
                 for(uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
                     neopixel_fill(display_buffer[channel],0x00,0x00,0x00);
-//                    neopixel_setchannel(1<<channel);
-//                    neopixel_show(display_buffer[channel]);
                 }
            } else if ( message_frame.item.data_frame.action == ACTION_SPEED ){
                speed = message_frame.item.data_frame.data[0];
