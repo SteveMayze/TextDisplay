@@ -223,7 +223,7 @@ void textdisplay_ctrl(){
                 }
            } else if ( message_frame.item.data_frame.action == ACTION_COLOUR ) { // Colour
                forground_colour = message_frame.item.data_frame.data[0];
-               if( message_frame.item.data_length > 1)
+               if( message_frame.item.data_length > 2)
                   background_colour = message_frame.item.data_frame.data[1];
            } else if (message_frame.item.data_frame.action == ACTION_RESET ){
                 // Reset
