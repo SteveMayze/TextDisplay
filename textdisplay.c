@@ -19,7 +19,7 @@
 
 #define MAX_BUFFERS 8
 
-#define DEFAULT_MESSAGE "ZAM PCS Texteck "
+#define DEFAULT_MESSAGE "ZAM PCS Texteck jump"
 uint8_t display_buffer[MAX_BUFFERS][neopixel_buffer_size];
 
 char message[MAX_MESSAGE_SIZE] = DEFAULT_MESSAGE;
@@ -90,6 +90,7 @@ uint8_t render_next_char(char message[], uint8_t message_length, uint8_t char_id
     
     if (message[char_idx] == ' ') {
         clear_char_buffer(char_buffer);
+        char_buffer->width = 3;
         return 0;  
     } 
     uint8_t font_idx = (message[char_idx] & 0x7F) - FONT_START_CHAR;

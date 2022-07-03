@@ -258,7 +258,7 @@ void neopixel_show(uint8_t strip[])
         // on the colour specification for the pixel.
         uint8_t colour_idx = strip[p];
         cli();
-        for(uint8_t i = 0; i<3; i++){
+        for(uint8_t i = 0; i<COLOUR_COUNT; i++){
             pdata =  pgm_read_byte( &(colour_chart[colour_idx][i]));  
             // pdata =  colour_chart[colour_idx][i];  
             //SR595_PORT |= (1 << SR595_PA4 );
