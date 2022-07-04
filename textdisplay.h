@@ -14,7 +14,7 @@ extern "C" {
 
 #define NEO_DENSITY_COMPACT
 
-#define MAX_MESSAGE_SIZE 150
+#define MAX_MESSAGE_SIZE 200
     
 void textdisplay_initialise();
 void textdisplay_ctrl();

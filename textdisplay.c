@@ -93,7 +93,8 @@ uint8_t render_next_char(char message[], uint8_t message_length, uint8_t char_id
         char_buffer->width = 3;
         return 0;  
     } 
-    uint8_t font_idx = (message[char_idx] & 0x7F) - FONT_START_CHAR;
+    // uint8_t font_idx = (message[char_idx] & 0x7F) - FONT_START_CHAR;
+    uint8_t font_idx = message[char_idx] - FONT_START_CHAR;
     // The font information is stored in the programs space and needs
     // this workaround to access it.
     uint8_t font_char[5];
@@ -197,7 +198,8 @@ void textdisplay_ctrl(){
                USART0_Write(0x01);
                USART0_Write(0x01);
            } else { // Bad checksum
-               strcpy(message, DEFAULT_MESSAGE);
+               // strcpy(message, DEFAULT_MESSAGE);
+               strcpy(message, "chk ");
                message_length = strlen(message);
                column = 0;
                chr_idx = 0;
@@ -242,7 +244,8 @@ void textdisplay_ctrl(){
            } else if ( message_frame.item.data_frame.action == ACTION_SPEED ){
                speed = message_frame.item.data_frame.data[0];
            } else { // Invalid action
-               strcpy(message, DEFAULT_MESSAGE);
+               // strcpy(message, DEFAULT_MESSAGE);
+               strcpy(message, "action ");
                message_length = strlen(message);
                column = 0;
                chr_idx = 0;
