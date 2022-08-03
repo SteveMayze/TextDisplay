@@ -19,12 +19,12 @@
 
 #define MAX_BUFFERS 8
 
-#define DEFAULT_MESSAGE "ZAM PCS Texteck jump"
+#define DEFAULT_MESSAGE "Wilkommen in ZAM "
 uint8_t display_buffer[MAX_BUFFERS][neopixel_buffer_size];
 
-char message[MAX_MESSAGE_SIZE] = DEFAULT_MESSAGE;
+char message[MAX_MESSAGE_SIZE];
 uint8_t speed = 0x7F;
-uint8_t message_length = 16;
+uint8_t message_length = 17;
 volatile uint8_t chr_idx = 0;
 volatile uint8_t column = 0;
 uint8_t data = 0;
@@ -133,6 +133,7 @@ void textdisplay_initialise(){
     chr_idx = 0;
     column = 0;
     clear_char_buffer(&char_buffer);
+    strcpy(message, DEFAULT_MESSAGE);
     render_next_char(message, message_length, chr_idx, 
             forground_colour, &char_buffer);
     USART0_flush();
