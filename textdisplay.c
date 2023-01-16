@@ -19,7 +19,7 @@
 
 #define MAX_BUFFERS 8
 
-#define DEFAULT_MESSAGE "Wilkommen in ZAM "
+#define DEFAULT_MESSAGE "Willkommen im ZAM "
 uint8_t display_buffer[MAX_BUFFERS][neopixel_buffer_size];
 
 char message[MAX_MESSAGE_SIZE];

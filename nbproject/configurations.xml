@@ -30,6 +30,7 @@
                    displayName="Important Files"
                    projectFiles="false">
       <itemPath>Makefile</itemPath>
+      <itemPath>NEO_TextDisplay.mc3</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
@@ -46,7 +47,7 @@
         <platformTool>AtmelIceTool</platformTool>
         <languageToolchain>XC8</languageToolchain>
         <languageToolchainVersion>2.36</languageToolchainVersion>
-        <platform>3</platform>
+        <platform>4</platform>
       </toolsSet>
       <packs>
         <pack name="ATtiny_DFP" vendor="Microchip" version="3.0.151"/>
