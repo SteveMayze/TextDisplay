@@ -5,6 +5,7 @@
  * Author : Steven
  */ 
 
+
 #include "time.h"
 #include "avr/interrupt.h"
 #include "neopixel.h"
@@ -40,7 +41,7 @@ int main(void)
 	while(true) {
         textdisplay_ctrl();
         textdisplay_roll_text();
-        delay_ms(100);
+        delay_ms(75);
 	}
 	return 0;
 }

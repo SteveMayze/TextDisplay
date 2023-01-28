@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include "attiny1614_sr595.h"
 
+#define NEO_DENSITY_COMPACT
+
 typedef struct {
 	uint8_t pix;
 	uint8_t red;
@@ -40,11 +42,34 @@ typedef struct {
 #define NEOPIXELS_SIZE 60
 
 /*! The NeoPixel buffer size */
-#define neopixel_buffer_size NEOPIXELS_SIZE * 3
+#ifdef NEO_DENSITY_COMPACT
+// Compact will have one byte to represent a full colour density.
+// These  become an index to a colour array that defines a fixed set
+// of colours.
+
+#define NEO_COLOUR_BLACK  0
+#define NEO_COLOUR_RED    1
+#define NEO_COLOUR_ORANGE 2
+#define NEO_COLOUR_YELLO  3
+#define NEO_COLOUR_GREEN  4
+#define NEO_COLOUR_BLUE   5
+#define NEO_COLOUR_INDIGO 6
+#define NEO_COLOUR_VIOLET 7
+#define NEO_COLOUR_WHITE  8
+
+#define NEO_COLOUR_DENSITY 1
+#else
+// The colour density implies how many bytes are to be used
+// in the pixel ram. 3 indicates that each of the RGB will take
+// up a byte each.
+#define NEO_COLOUR_DENSITY 3
+#endif 
+
+#define neopixel_buffer_size NEOPIXELS_SIZE * NEO_COLOUR_DENSITY
 /*! The location of the first pixel */
 #define FIRST_PIXEL 0
 /*! The location of the last pixel */
-#define LAST_PIXEL ((NEOPIXELS_SIZE-1) *3)
+#define LAST_PIXEL ((NEOPIXELS_SIZE-1) * NEO_COLOUR_DENSITY)
 // #define LAST_PIXEL ((NEOPIXELS_SIZE *3) -1 )
 
 /*! The relative location of the RED colour data */
@@ -102,6 +127,8 @@ void neopixel_shift(uint8_t strip[], bool direction, bool roll );
  * \brief	Initialises the buffer with the given colour 
  */
 void neopixel_fill(uint8_t strip[], uint8_t red, uint8_t green, uint8_t blue);
+
+uint8_t get_speed();
 
 /*!
  * \brief Pushes the buffer out to the pixel strip.

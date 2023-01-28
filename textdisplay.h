@@ -11,6 +11,10 @@
 #ifdef	__cplusplus
 extern "C" {
 #endif
+
+#define NEO_DENSITY_COMPACT
+
+#define MAX_MESSAGE_SIZE 200
     
 void textdisplay_initialise();
 void textdisplay_ctrl();
