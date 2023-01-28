@@ -41,21 +41,22 @@ uint8_t background_colour = NEO_COLOUR_BLACK;
 #define INVALID_HEADER 0x81
 #define INVALID_ACTION 0x82
 #define BAD_CHKSUM 0x83
+#define MESSAGE_TOO_LONG 0x84
 
 // uint8_t char_buffer[MAX_BUFFERS][5]; // The number of characters in the string x 5 for each char and x3 for each LED.
 
-typedef struct _char_buffer{
+typedef struct _char_buffer {
     uint8_t width;
     uint8_t definition[MAX_BUFFERS][5];
 } Char_Buffer;
 Char_Buffer char_buffer;
 
 typedef struct _Data_Frame {
-  // uint8_t data_length;
-  uint8_t action;
-  uint8_t data[64];
-  // uint8_t checksum;
-  
+    // uint8_t data_length;
+    uint8_t action;
+    uint8_t data[MAX_MESSAGE_SIZE];
+    // uint8_t checksum;
+
 } Data_Frame;
 
 typedef struct _Messasge_Frame {
@@ -70,200 +71,213 @@ typedef union {
     uint8_t raw[68];
 } Message_Frame;
 
-
-
 uint8_t clear_char_buffer(Char_Buffer *char_buffer) {
-    for (uint8_t col=0; col < 5; col++){
-        for(uint8_t row = 0; row < MAX_BUFFERS; row++){
-            char_buffer->definition[row][col] = background_colour; 
+    for (uint8_t col = 0; col < 5; col++) {
+        for (uint8_t row = 0; row < MAX_BUFFERS; row++) {
+            char_buffer->definition[row][col] = background_colour;
         }
     }
     char_buffer->width = 0;
     return 0;
 }
 
-
 uint8_t render_next_char(char message[], uint8_t message_length, uint8_t char_idx,
-        uint8_t colour, Char_Buffer *char_buffer){
-    
+        uint8_t colour, Char_Buffer *char_buffer) {
+
     bool added = false;
-    
+
     if (message[char_idx] == ' ') {
         clear_char_buffer(char_buffer);
         char_buffer->width = 3;
-        return 0;  
-    } 
+        return 0;
+    }
     // uint8_t font_idx = (message[char_idx] & 0x7F) - FONT_START_CHAR;
     uint8_t font_idx = message[char_idx] - FONT_START_CHAR;
     // The font information is stored in the programs space and needs
     // this workaround to access it.
     uint8_t font_char[5];
-    for (uint8_t i=0; i < 5; i++){
-        font_char[i] =  pgm_read_byte( &(font_table[font_idx][i]));        
+    for (uint8_t i = 0; i < 5; i++) {
+        font_char[i] = pgm_read_byte(&(font_table[font_idx][i]));
     }
-    for(uint8_t col = 0; col < 5; col++){
+    for (uint8_t col = 0; col < 5; col++) {
         added = false;
-        for(uint8_t row = 0; row < MAX_BUFFERS; row++){
+        for (uint8_t row = 0; row < MAX_BUFFERS; row++) {
             // char_buffer->definition[row][char_buffer->width] = background_colour;
-            if(  font_char[col] & (1<<row)) {
+            if (font_char[col] & (1 << row)) {
                 char_buffer->definition[row][char_buffer->width] = colour;
                 added = true;
             }
         }
-         if(  added )
-             char_buffer->width++;
+        if (added)
+            char_buffer->width++;
     }
     return 0;
 }
 
 void send_response(Message_Frame *message_frame) {
     uint8_t checksum = 0;
-    for (uint8_t i = 2; i<message_frame->item.data_length; i++){
+    for (uint8_t i = 2; i < message_frame->item.data_length; i++) {
         checksum += message_frame->raw[i];
     }
     checksum &= 0xFF;
     message_frame->item.checksum = 0xFF - checksum;
-    for(uint8_t i = 0; i < message_frame->item.data_length+3; i++){
+    for (uint8_t i = 0; i < message_frame->item.data_length + 3; i++) {
         USART0_Write(message_frame->raw[i]);
     }
 }
 
-void textdisplay_initialise(){
+void textdisplay_initialise() {
 
     chr_idx = 0;
     column = 0;
     clear_char_buffer(&char_buffer);
     strcpy(message, DEFAULT_MESSAGE);
-    render_next_char(message, message_length, chr_idx, 
+    render_next_char(message, message_length, chr_idx,
             forground_colour, &char_buffer);
     USART0_flush();
 
 }
 
-
-void textdisplay_roll_text(){
-    if (speed > 0 ){
-        if ( column < char_buffer.width ){ // 0, 1, 2, 3, 4
-            for( uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
+void textdisplay_roll_text() {
+    if (speed > 0) {
+        if (column < char_buffer.width) { // 0, 1, 2, 3, 4
+            for (uint8_t channel = 0; channel < MAX_BUFFERS; channel++) {
                 neopixel_shift(display_buffer[channel], true, false);
                 display_buffer[channel][0] = char_buffer.definition[channel][column];
-                neopixel_setchannel( 1 << channel );
+                neopixel_setchannel(1 << channel);
                 neopixel_show(display_buffer[channel]);
             }
             column++;
         } else { // 5
             chr_idx++;
-            if ( chr_idx > message_length -1){
+            if (chr_idx > message_length - 1) {
                 chr_idx = 0;
             }
             clear_char_buffer(&char_buffer);
             render_next_char(message, message_length, chr_idx, forground_colour, &char_buffer);
-            for( uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
+            for (uint8_t channel = 0; channel < MAX_BUFFERS; channel++) {
                 neopixel_shift(display_buffer[channel], true, false);
                 display_buffer[channel][0] = background_colour;
-                neopixel_setchannel( 1<<channel );
+                neopixel_setchannel(1 << channel);
                 neopixel_show(display_buffer[channel]);
             }
-            column=0;
+            column = 0;
         }
     }
-    
+
 }
 
 uint8_t get_speed() {
     return speed;
 }
 
+void clear_display(){
+    
+}
 
-
-void textdisplay_ctrl(){
-    if(USART0_IsRxReady()) {
+void textdisplay_ctrl() {
+    if (USART0_IsRxReady()) {
         Message_Frame message_frame;
         message_frame.item.frame_header = USART0_Read();
-        if( message_frame.item.frame_header == FRAME_DELIMITER ){ // Frame Delimiter
-           message_frame.item.data_length = USART0_Read();
-
-           message_frame.item.data_frame.action = USART0_Read();
-           checksum = message_frame.item.data_frame.action;
-           for (uint8_t i = 0; i < message_frame.item.data_length-1; i++){
-               message_frame.item.data_frame.data[i] = USART0_Read();
-               checksum += message_frame.item.data_frame.data[i];
-           }
-           message_frame.item.data_frame.data[message_frame.item.data_length-1] = 0x00;
-           checksum &= 0xFF;
-           checksum = 0xFF - checksum;
-           message_frame.item.checksum = USART0_Read();
-           if( checksum == message_frame.item.checksum ){
-               USART0_Write(FRAME_DELIMITER);
-               USART0_Write(0x01);
-               USART0_Write(0x01);
-               USART0_Write(0x01);
-           } else { // Bad checksum
-               // strcpy(message, DEFAULT_MESSAGE);
-               strcpy(message, "chk ");
-               message_length = strlen(message);
-               column = 0;
-               chr_idx = 0;
-               message_frame.item.frame_header = FRAME_DELIMITER;
-               message_frame.item.data_length = 0x02;
-               message_frame.item.data_frame.action = BAD_CHKSUM;
-               message_frame.item.data_frame.data[0] = checksum;
-               send_response(&message_frame);
-           }
-
-           if( message_frame.item.data_frame.action == ACTION_MESSAGE ){ // MESSAGE
-               strcpy(message, (char*)message_frame.item.data_frame.data);
-               message_length = strlen(message);
-               column = 0;
-               chr_idx = 0;
-                // TODO Clear the display.
-                clear_char_buffer(&char_buffer);
-                render_next_char(message, message_length, chr_idx, 
-                        forground_colour, &char_buffer);
-                for(uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
-                    neopixel_fill(display_buffer[channel], background_colour,0x00,0x00);
-                    neopixel_setchannel( 1<<channel );
-                    neopixel_show(display_buffer[channel]);
-                }
-           } else if ( message_frame.item.data_frame.action == ACTION_COLOUR ) { // Colour
-               forground_colour = message_frame.item.data_frame.data[0];
-               if( message_frame.item.data_length > 2)
-                  background_colour = message_frame.item.data_frame.data[1];
-           } else if (message_frame.item.data_frame.action == ACTION_RESET ){
-                // Reset
+        if (message_frame.item.frame_header == FRAME_DELIMITER) { // Frame Delimiter
+            message_frame.item.data_length = USART0_Read();
+            
+            // Check the message size and return an error when greater than
+            // MAX_MESSAGE_SIZE.
+            if ( message_frame.item.data_length > MAX_MESSAGE_SIZE){
                 strcpy(message, DEFAULT_MESSAGE);
-                message_length = strlen(DEFAULT_MESSAGE);
-                chr_idx = 0;
+                message_length = strlen(message);
                 column = 0;
-                forground_colour = NEO_COLOUR_WHITE;
-                background_colour = NEO_COLOUR_BLACK;
+                chr_idx = 0;
+                uint8_t framelength = message_frame.item.data_length;
+                message_frame.item.frame_header = FRAME_DELIMITER;
+                message_frame.item.data_length = 0x03;
+                message_frame.item.data_frame.action = MESSAGE_TOO_LONG;
+                message_frame.item.data_frame.data[0] = framelength;
+                message_frame.item.data_frame.data[1] = MAX_MESSAGE_SIZE;
+                send_response(&message_frame);
                 clear_char_buffer(&char_buffer);
-                render_next_char(message, message_length, chr_idx, forground_colour, &char_buffer);
-                for(uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
-                    neopixel_fill(display_buffer[channel],0x00,0x00,0x00);
-                }
-           } else if ( message_frame.item.data_frame.action == ACTION_SPEED ){
-               speed = message_frame.item.data_frame.data[0];
-           } else { // Invalid action
-               // strcpy(message, DEFAULT_MESSAGE);
-               strcpy(message, "action ");
-               message_length = strlen(message);
-               column = 0;
-               chr_idx = 0;
-               message_frame.item.frame_header = FRAME_DELIMITER;
-               message_frame.item.data_length = 0x02;
-               message_frame.item.data_frame.action = INVALID_ACTION;
-               message_frame.item.data_frame.data[0] = message_frame.item.data_frame.action;
-               send_response(&message_frame);
-               clear_char_buffer(&char_buffer);
-               render_next_char(message, message_length, chr_idx, 
+                render_next_char(message, message_length, chr_idx,
                         forground_colour, &char_buffer);
-                for(uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
-                    neopixel_fill(display_buffer[channel],0x00,0x00,0x00);
-                    neopixel_setchannel(1<<channel);
-                    neopixel_show(display_buffer[channel]);
+                clear_display();
+                return;
+            }
+
+            // OK to proceed, read the remaining data.
+            message_frame.item.data_frame.action = USART0_Read();
+            checksum = message_frame.item.data_frame.action;
+            for (uint8_t i = 0; i < message_frame.item.data_length - 1; i++) {
+                    message_frame.item.data_frame.data[i] = USART0_Read();
+                checksum += message_frame.item.data_frame.data[i];
+            }
+            message_frame.item.data_frame.data[message_frame.item.data_length - 1] = 0x00;
+            checksum &= 0xFF;
+            checksum = 0xFF - checksum;
+            message_frame.item.checksum = USART0_Read();
+            
+            // The checksum does not match. Return an error.
+            if (checksum != message_frame.item.checksum) {
+                strcpy(message, DEFAULT_MESSAGE);
+                message_length = strlen(message);
+                column = 0;
+                chr_idx = 0;
+                message_frame.item.frame_header = FRAME_DELIMITER;
+                message_frame.item.data_length = 0x02;
+                message_frame.item.data_frame.action = BAD_CHKSUM;
+                message_frame.item.data_frame.data[0] = checksum;
+                send_response(&message_frame);
+            } else {
+                if (message_frame.item.data_frame.action == ACTION_MESSAGE) { // MESSAGE
+                    strcpy(message, (char*) message_frame.item.data_frame.data);
+                    message_length = strlen(message);
+                    column = 0;
+                    chr_idx = 0;
+                    // TODO Clear the display.
+                    clear_char_buffer(&char_buffer);
+                    render_next_char(message, message_length, chr_idx,
+                            forground_colour, &char_buffer);
+                    clear_display();
+                } else if (message_frame.item.data_frame.action == ACTION_COLOUR) { // Colour
+                    forground_colour = message_frame.item.data_frame.data[0];
+                    if (message_frame.item.data_length > 2)
+                        background_colour = message_frame.item.data_frame.data[1];
+                } else if (message_frame.item.data_frame.action == ACTION_RESET) {
+                    // Reset
+                    strcpy(message, DEFAULT_MESSAGE);
+                    message_length = strlen(DEFAULT_MESSAGE);
+                    chr_idx = 0;
+                    column = 0;
+                    forground_colour = NEO_COLOUR_WHITE;
+                    background_colour = NEO_COLOUR_BLACK;
+                    clear_char_buffer(&char_buffer);
+                    render_next_char(message, message_length, chr_idx, forground_colour, &char_buffer);
+                    for (uint8_t channel = 0; channel < MAX_BUFFERS; channel++) {
+                        neopixel_fill(display_buffer[channel], 0x00, 0x00, 0x00);
+                    }
+                } else if (message_frame.item.data_frame.action == ACTION_SPEED) {
+                    speed = message_frame.item.data_frame.data[0];
+                } else { // Invalid action
+                    strcpy(message, DEFAULT_MESSAGE);
+                    message_length = strlen(message);
+                    column = 0;
+                    chr_idx = 0;
+                    message_frame.item.frame_header = FRAME_DELIMITER;
+                    message_frame.item.data_length = 0x02;
+                    message_frame.item.data_frame.action = INVALID_ACTION;
+                    message_frame.item.data_frame.data[0] = message_frame.item.data_frame.action;
+                    send_response(&message_frame);
+                    clear_char_buffer(&char_buffer);
+                    render_next_char(message, message_length, chr_idx,
+                            forground_colour, &char_buffer);
+                    clear_display();
+                    return;
                 }
-           }
+                // Return message received OK.
+                USART0_Write(FRAME_DELIMITER);
+                USART0_Write(0x01);
+                USART0_Write(0x01);
+                USART0_Write(0x01);
+            }
         } else { // Invalid Header
             strcpy(message, DEFAULT_MESSAGE);
             message_length = strlen(message);
@@ -276,13 +290,9 @@ void textdisplay_ctrl(){
             send_response(&message_frame);
             USART0_flush();
             clear_char_buffer(&char_buffer);
-             render_next_char(message, message_length, chr_idx, 
-                     forground_colour, &char_buffer);
-             for(uint8_t channel = 0; channel < MAX_BUFFERS; channel++){
-                neopixel_fill(display_buffer[channel],0x00,0x00,0x00);
-                neopixel_setchannel(1<<channel);
-                neopixel_show(display_buffer[channel]);
-             }
+            render_next_char(message, message_length, chr_idx,
+                    forground_colour, &char_buffer);
+            clear_display();
         }
     }
 }

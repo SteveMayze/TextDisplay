@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 #include <avr/pgmspace.h>
-#define RGBW_PIXEL
+#define RGB_PIXEL
 #ifdef RGB_PIXEL
 #define COLOUR_COUNT 3
 const  uint8_t colour_chart[9][3] PROGMEM = { 
